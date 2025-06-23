@@ -2,6 +2,7 @@ services:
   db:
     image: bitnami/postgresql:17.4.0
     platform: linux/amd64
+    container_name: fastapi-db
     ports:
       - ${POSTGRESQL_PORT}:5432
     restart: always
@@ -13,6 +14,28 @@ services:
       - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
     networks:
       - docker-fastapi-base
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRESQL_USERNAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  fastapi:
+    build:
+      context: .
+    container_name: fastapi-app
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    command: bash -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@db:5432/${POSTGRESQL_DATABASE}
+    networks:
+      - docker-fastapi-base
+
 volumes:
   db-data:
 

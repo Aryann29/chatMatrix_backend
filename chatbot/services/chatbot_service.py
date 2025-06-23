@@ -46,9 +46,7 @@ async def create_chatbot(db: Session, chatbot: ChatbotCreate, user_id: int, know
         chatbot_id = str(uuid.uuid4())
         folder_path = f"uploads/chatbot/{chatbot_id}"
 
-        system_prompt = chatbot.system_prompt
-        if not system_prompt:
-            system_prompt = f"""You are a helpful assistant for {chatbot.business_name}.
+        system_prompt = chatbot.system_prompt or f"""You are a helpful assistant for {chatbot.business_name}.
         Context about {chatbot.business_name}:
         {chatbot.about_business}
 
@@ -70,7 +68,6 @@ async def create_chatbot(db: Session, chatbot: ChatbotCreate, user_id: int, know
         {{context}}
         Question: {{question}}"""
 
-    
         db_chatbot = save_chatbot_info(
             chatbot_id=chatbot_id,
             name=chatbot.name,
@@ -81,31 +78,48 @@ async def create_chatbot(db: Session, chatbot: ChatbotCreate, user_id: int, know
             db=db
         )
 
- 
         if knowledge_base:
             from chatbot.services.rag_service import load_documents, add_to_vector_db
-            for file in knowledge_base:
-                existing = db.query(ChatbotFile).filter_by(
-                    chatbot_id=chatbot_id,
-                    file_name=file.filename
-                ).first()
-                if existing:
-                    logger.info(f"Skipping duplicate file: {file.filename}")
-                    continue
+            from langchain_chroma import Chroma
+            from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
+            # Step 1: Delete existing vectors for this chatbot_id
+            try:
+                embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+                vector_store = Chroma(
+                    collection_name="chatbots",
+                    embedding_function=embeddings,
+                    persist_directory="./chroma_db"
+                )
+                vector_store._collection.delete(where={"chatbot_id": chatbot_id})
+                logger.info(f"Deleted old vector entries for chatbot_id={chatbot_id}")
+            except Exception as e:
+                logger.error(f"Error deleting previous vectors: {e}")
+
+            # Step 2: Delete old file records from DB
+            db.query(ChatbotFile).filter_by(chatbot_id=chatbot_id).delete()
+
+            # Step 3: Clear old folder (if exists)
+            if os.path.exists(folder_path):
+                shutil.rmtree(folder_path)
+            os.makedirs(folder_path, exist_ok=True)
+
+            # Step 4: Process and save all files
+            for file in knowledge_base:
                 saved_path = await save_upload_file(file, folder_path)
                 chunks = load_documents(saved_path, chatbot_id)
-                add_to_vector_db(chunks)
+                add_to_vector_db(chunks, chatbot_id=chatbot_id)
 
                 db.add(ChatbotFile(
                     chatbot_id=chatbot_id,
                     file_name=file.filename,
                     file_type="pdf"
                 ))
+
             db.commit()
-        
 
         return db_chatbot
+
     except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"Database error during chatbot creation: {e}")
@@ -115,7 +129,7 @@ async def create_chatbot(db: Session, chatbot: ChatbotCreate, user_id: int, know
         logger.error(f"Error during chatbot creation: {e}")
         raise
 
-async def update_chatbot(db: Session, chatbot_id: str, user_id: int, chatbot: ChatbotUpdate):
+async def update_chatbot(db: Session, chatbot_id: str, user_id: int, chatbot: ChatbotUpdate, knowledge_base: Optional[List[UploadFile]] = None):
     try:
         db_chatbot = get_chatbot(db, chatbot_id, user_id)
         if not db_chatbot:
@@ -123,6 +137,27 @@ async def update_chatbot(db: Session, chatbot_id: str, user_id: int, chatbot: Ch
         update_data = chatbot.dict(exclude_unset=True)
         for key, value in update_data.items():
             setattr(db_chatbot, key, value)
+        if knowledge_base:
+            from chatbot.services.rag_service import load_documents, add_to_vector_db
+            folder_path = f"uploads/chatbot/{chatbot_id}"
+            os.makedirs(folder_path, exist_ok=True)
+            for file in knowledge_base:
+                existing_file = db.query(ChatbotFile).filter_by(
+                    chatbot_id=chatbot_id, 
+                    file_name=file.filename
+                ).first()
+                if existing_file:
+                    logger.info(f"File {file.filename} already exists for chatbot {chatbot_id}, skipping...")
+                    continue
+                saved_path = await save_upload_file(file, folder_path)
+                chunks = load_documents(saved_path, chatbot_id)
+                add_to_vector_db(chunks, chatbot_id=chatbot_id)
+                db.add(ChatbotFile(
+                    chatbot_id=chatbot_id,
+                    file_name=file.filename,
+                    file_type="pdf"
+                ))
+            logger.info(f"Added new files to knowledge base for chatbot_id={chatbot_id}")
         db.commit()
         db.refresh(db_chatbot)
         return db_chatbot
@@ -134,7 +169,6 @@ async def update_chatbot(db: Session, chatbot_id: str, user_id: int, chatbot: Ch
         db.rollback()
         logger.error(f"Error during chatbot update: {e}")
         raise
-
 def delete_chatbot(db: Session, chatbot_id: str, user_id: int):
     try:
         db_chatbot = get_chatbot(db, chatbot_id, user_id)

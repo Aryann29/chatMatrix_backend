@@ -1,6 +1,7 @@
 from pydantic import BaseModel, constr, Field
 from datetime import datetime
 from typing import Optional, List
+from fastapi import UploadFile
 
 class ChatbotBase(BaseModel):
     name: constr(min_length=1, max_length=255)
@@ -16,6 +17,7 @@ class ChatbotUpdate(ChatbotBase):
     business_name: Optional[constr(min_length=1, max_length=255)] = None
     about_business: Optional[str] = None
     system_prompt: Optional[str] = None
+    knowledge_base: Optional[List[UploadFile]] = None 
 
 class ChatbotSchema(ChatbotBase):
     chatbot_id: str
@@ -30,3 +32,5 @@ class CreatedChatbotResponse(BaseModel):
     status: str
     message: str
     chatbot_id: str
+
+

@@ -9,6 +9,33 @@ from logger import logger
 from typing import Optional
 from sqlalchemy.orm import Session
 from chatbot.models.chatbot import Chatbot
+from langchain_community.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+
+
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
+
+def load_documents(file_path, chatbot_id):
+    loader = PyPDFLoader(file_path)
+    documents = loader.load()
+    for doc in documents:
+        doc.metadata.update({"chatbot_id": chatbot_id})
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    return text_splitter.split_documents(documents)
+
+def add_to_vector_db(chunks, chatbot_id):
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+    vector_store = Chroma(
+        collection_name="chatbots",
+        embedding_function=embeddings,
+        persist_directory="./chroma_db"
+    )
+
+    # Optional: You can remove the delete part here if already handled in `create_chatbot`
+    vector_store.add_documents(documents=chunks)
+    logger.info(f"Chunks added to vector DB for chatbot_id={chatbot_id}")
 
 def initialize_chatbot(db: Session, chatbot_id: str, user_id: Optional[int] = None):
     """

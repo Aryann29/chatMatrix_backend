@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from auth.services.auth_service import get_current_active_user
 from core.database import get_db
 from user.models.user import User
@@ -65,6 +65,7 @@ async def chatbot_update(
     business_name: str = Form(None),
     about_business: str = Form(None),
     system_prompt: str = Form(None),
+    knowledge_base: Optional[List[UploadFile]] = File(None),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
@@ -76,7 +77,7 @@ async def chatbot_update(
         about_business=about_business,
         system_prompt=system_prompt
     )
-    updated_chatbot = await update_chatbot(db, chatbot_id, current_user.id, chatbot_data)
+    updated_chatbot = await update_chatbot(db, chatbot_id, current_user.id, chatbot_data, knowledge_base)
     if not updated_chatbot:
         raise HTTPException(status_code=404, detail="Chatbot not found")
     return CreatedChatbotResponse(
@@ -108,7 +109,6 @@ def interact_chatbot(
     """
     Public endpoint to interact with a chatbot. Creates a new session if session_id is not provided.
     """
-
     chat_history = SQLChatHistory(db=db, chatbot_id=chatbot_id, session_id=session_id)
     session_id = chat_history.session_id 
 

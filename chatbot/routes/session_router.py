@@ -5,6 +5,7 @@ from auth.services.auth_service import get_current_active_user
 from core.database import get_db
 from user.models.user import User
 from chatbot.schemas.session import ChatSessionSchema, ChatSessionCreate, ChatSessionUpdate, GetSessionResponse
+from chatbot.services.session_service import get_session,get_sessions
 
 
 session_router = APIRouter(

@@ -5,12 +5,12 @@ from typing import Optional, List
 class ChatMessageBase(BaseModel):
     session_id: constr(min_length=1, max_length=36)
     content: str
-    role: constr(min_length=1, max_length=50)  # e.g., 'user' or 'assistant'
+    role: constr(min_length=1, max_length=50)
 
 class ChatMessageCreate(ChatMessageBase):
-    pass  # No additional fields needed for creation
+    pass
 
-class ChatMessageUpdate(ChatMessageBase):
+class ChatMessageUpdate(BaseModel):
     session_id: Optional[constr(min_length=1, max_length=36)] = None
     content: Optional[str] = None
     role: Optional[constr(min_length=1, max_length=50)] = None
@@ -18,8 +18,7 @@ class ChatMessageUpdate(ChatMessageBase):
 class ChatMessageSchema(ChatMessageBase):
     message_id: str
     chatbot_id: str
-    created_at: datetime
-    updated_at: datetime
+    timestamp: datetime  # <-- match SQLAlchemy model
 
     class Config:
         from_attributes = True

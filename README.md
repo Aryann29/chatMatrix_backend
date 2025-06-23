@@ -96,12 +96,12 @@ This design allows users to build smart, context-aware chatbots over their own d
 * [x] Vector storage using Chroma
 * [x] Session-based chat message storage
 * [x] Basic chatbot creation and querying APIs
-* [ ] User authentication system
-* [ ] Admin panel for managing chatbots
+* [x] User authentication system
+* [x] Admin panel for managing chatbots
 * [ ] Embeddable widget generator
-* [ ] User document upload support (PDF, text)
-* [ ] Frontend UI (React)
-* [ ] Dockerized production-ready deployment
+* [x] User document upload support (PDF, text)
+* [x] Frontend UI (React)
+* [x] Dockerized production-ready deployment
 
 ## License
 

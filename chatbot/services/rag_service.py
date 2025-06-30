@@ -33,7 +33,6 @@ def add_to_vector_db(chunks, chatbot_id):
         persist_directory="./chroma_db"
     )
 
-    # Optional: You can remove the delete part here if already handled in `create_chatbot`
     vector_store.add_documents(documents=chunks)
     logger.info(f"Chunks added to vector DB for chatbot_id={chatbot_id}")
 

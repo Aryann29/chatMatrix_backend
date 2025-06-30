@@ -1,6 +1,10 @@
 # ChatMatrix
 
-**ChatMatrix** is a SaaS platform that allows users to create and manage AI-powered chatbots with minimal effort. These chatbots can be easily embedded into any website via a simple HTML snippet. The platform emphasizes Retrieval-Augmented Generation (RAG), LangChain, and modern AI tooling to deliver intelligent, context-aware conversations.
+**ChatMatrix** is a SaaS platform that allows users to create and manage AI-powered chatbots with minimal effort. These chatbots can be easily embedded into any website via a simple HTML snippet(feature to be added). The platform emphasizes Retrieval-Augmented Generation (RAG), LangChain, and modern AI tooling to deliver intelligent, context-aware conversations.
+
+## Tech Stack
+RAG Architecture
+![alt text](image.png)
 
 ## Key Features
 
@@ -28,8 +32,8 @@
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/chatmatrix.git
-cd chatmatrix
+git clone https://github.com/Aryann29/chatMatrix_backend.git
+cd chatMatrix_backend
 ```
 
 ### 2. Set Up Virtual Environment
@@ -109,4 +113,3 @@ MIT License
 
 ---
 
-Want to contribute? Open an issue or discussion to get started!

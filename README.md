@@ -2,8 +2,7 @@
 
 **ChatMatrix** is a SaaS platform that allows users to create and manage AI-powered chatbots with minimal effort. These chatbots can be easily embedded into any website via a simple HTML snippet(feature to be added). The platform emphasizes Retrieval-Augmented Generation (RAG), LangChain, and modern AI tooling to deliver intelligent, context-aware conversations.
 
-## Tech Stack
-RAG Architecture
+## RAG Architecture
 ![alt text](image.png)
 
 ## Key Features
